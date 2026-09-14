@@ -35,7 +35,7 @@ BACKOFF_MAX = 1800
 
 
 def launch_tray():
-    cmd = dg.launch_command("tray.py", "Desk Guard.exe")
+    cmd = dg.launch_command("tray.py", "DeskGuard.exe")
     proc = subprocess.Popen(cmd, cwd=dg.BASE_DIR)
     dg.log(f"[watchdog] launched tray (pid {proc.pid})")
     return proc.pid

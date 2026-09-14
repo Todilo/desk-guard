@@ -1,0 +1,6 @@
+# Normalize line endings for consistent diffs regardless of platform/editor.
+* text=auto eol=lf
+
+*.ico binary
+*.onnx binary
+*.png binary

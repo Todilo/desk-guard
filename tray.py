@@ -674,7 +674,7 @@ def watchdog_guard_loop():
             dg.log("watchdog keeps disappearing - backing off 300s before retrying")
 
         dg.log("watchdog missing, relaunching")
-        subprocess.Popen(dg.launch_command("watchdog.py", "Desk Guard Watchdog.exe"), cwd=dg.BASE_DIR)
+        subprocess.Popen(dg.launch_command("watchdog.py", "DeskGuardWatchdog.exe"), cwd=dg.BASE_DIR)
 
 
 def main():

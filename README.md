@@ -1,8 +1,24 @@
 # Desk Guard
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/Todilo/desk-guard)](https://github.com/Todilo/desk-guard/releases/latest)
+
 Watches the webcam and locks the Windows workstation when it can't confirm
 you're the one sitting there. Runs as a system tray app that autostarts at
 login.
+
+**Windows only** (uses `ctypes`/`win32` APIs throughout - workstation locking,
+foreground/focus handling, process supervision). Not tested on other
+platforms and not expected to work there without real changes.
+
+- Locks automatically when your face isn't recognized, or no one's there
+- Local-only face detection/recognition (OpenCV YuNet + LBPH) - no cloud,
+  no accounts, no telemetry
+- PIN-gated controls with lockout on repeated wrong guesses
+- Kill-resistant: a watchdog process locks + relaunches if the tray app is
+  killed outside an authorized quit
+- Windows notifications for locks, camera issues, and watchdog events
+- Snooze, live settings, re-training, all from the tray icon
 
 ## Setup (on a new machine)
 
@@ -16,14 +32,14 @@ pip install -r requirements.txt
 python desk_guard.py enroll
 ```
 
-Then either double-click `Desk Guard Watchdog.exe` (or follow the Autostart
+Then either double-click `DeskGuardWatchdog.exe` (or follow the Autostart
 section below), or run from source with `pythonw.exe watchdog.py`.
 
 ## Packaged .exe vs. running from source
 
 The two always-running components are built as standalone, custom-branded
-executables via PyInstaller - `Desk Guard.exe` (from `tray.py`) and
-`Desk Guard Watchdog.exe` (from `watchdog.py`). This is what makes Task
+executables via PyInstaller - `DeskGuard.exe` (from `tray.py`) and
+`DeskGuardWatchdog.exe` (from `watchdog.py`). This is what makes Task
 Manager and Windows notifications show "Desk Guard" instead of a generic
 "Python" (which is what you'd see running the raw `.py` files under
 `pythonw.exe`, since that's `python.exe`'s own embedded product name).
@@ -42,8 +58,8 @@ other by exe name.
 
 **Rebuilding after a code change:**
 ```
-pyinstaller --noconfirm "Desk Guard.spec"
-pyinstaller --noconfirm "Desk Guard Watchdog.spec"
+pyinstaller --noconfirm "DeskGuard.spec"
+pyinstaller --noconfirm "DeskGuardWatchdog.spec"
 ```
 Then copy the two `.exe`s out of `dist\` into the app folder (overwriting the
 old ones), after stopping any running instance first (`python stop_all.py` -
@@ -177,8 +193,8 @@ degrades to "logged and retried," never to "locked out."
 
 A shortcut in the Startup folder
 (`%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\Desk Guard.lnk`)
-launches `Desk Guard Watchdog.exe` at login — no console window, and the
-watchdog brings up `Desk Guard.exe` itself.
+launches `DeskGuardWatchdog.exe` at login — no console window, and the
+watchdog brings up `DeskGuard.exe` itself.
 
 ## Files
 
@@ -200,11 +216,11 @@ watchdog brings up `Desk Guard.exe` itself.
 | `pending_notification.json`      | Transient - a note from the watchdog for tray.py to show as a toast on next start |
 | `face_detection_yunet_2023mar.onnx` | Face detection model                              |
 | `requirements.txt`               | Pinned dependency versions for `pip install -r`       |
-| `Desk Guard.exe`                  | Packaged, custom-branded tray app (built from `tray.py`) |
-| `Desk Guard Watchdog.exe`         | Packaged, custom-branded watchdog (built from `watchdog.py`) |
+| `DeskGuard.exe`                  | Packaged, custom-branded tray app (built from `tray.py`) |
+| `DeskGuardWatchdog.exe`         | Packaged, custom-branded watchdog (built from `watchdog.py`) |
 | `icon.ico`                         | App icon, embedded into both `.exe`s                  |
 | `version_tray.txt` / `version_watchdog.txt` | Version-resource info (sets each exe's displayed name/product) |
-| `Desk Guard.spec` / `Desk Guard Watchdog.spec` | PyInstaller build specs - rerun to rebuild after a code change |
+| `DeskGuard.spec` / `DeskGuardWatchdog.spec` | PyInstaller build specs - rerun to rebuild after a code change |
 
 ## Tray menu reference
 

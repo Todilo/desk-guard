@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  compile-and-import:
+    # Windows-only: the code uses ctypes.windll throughout (locking the
+    # workstation, foreground/focus handling, process supervision), so it
+    # can't even be imported on other platforms.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile check
+        run: python -m py_compile desk_guard.py tray.py watchdog.py pin_auth.py stop_all.py uninstall.py
+
+      - name: Import smoke test
+        run: python -c "import desk_guard, pin_auth, tray, watchdog, stop_all, uninstall; print('imports OK')"

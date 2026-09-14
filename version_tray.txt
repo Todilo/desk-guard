@@ -20,7 +20,7 @@ VSVersionInfo(
         StringStruct(u'FileVersion', u'1.0.0.0'),
         StringStruct(u'InternalName', u'Desk Guard'),
         StringStruct(u'LegalCopyright', u''),
-        StringStruct(u'OriginalFilename', u'Desk Guard.exe'),
+        StringStruct(u'OriginalFilename', u'DeskGuard.exe'),
         StringStruct(u'ProductName', u'Desk Guard'),
         StringStruct(u'ProductVersion', u'1.0.0.0')])
       ]),

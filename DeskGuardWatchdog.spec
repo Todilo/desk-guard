@@ -29,7 +29,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='Desk Guard Watchdog',
+    name='DeskGuardWatchdog',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

@@ -22,6 +22,20 @@ platforms and not expected to work there without real changes.
 
 ## Setup (on a new machine)
 
+**Option A - installer:** download `DeskGuardSetup.exe` from the
+[latest release](https://github.com/Todilo/desk-guard/releases/latest) and
+run it. No admin rights needed - it installs per-user to
+`%LocalAppData%\DeskGuard`, with an optional "start at login" checkbox and a
+proper Start Menu / uninstall entry.
+
+**Option B - just the files:** download or clone this repo, and either use
+the release's `DeskGuard.exe` / `DeskGuardWatchdog.exe` directly or build
+them yourself (see "Packaged .exe vs. running from source" below).
+
+Either way, one manual step remains: enrolling your face needs Python (the
+packaged app doesn't bundle it), since that isn't part of the packaged
+executables.
+
 Requires Python 3.12+ with tkinter (the standard python.org Windows installer
 includes it; the Microsoft Store build does not) - even when running the
 packaged `.exe`s day to day, Python stays needed for enrollment and the
@@ -34,6 +48,27 @@ python desk_guard.py enroll
 
 Then either double-click `DeskGuardWatchdog.exe` (or follow the Autostart
 section below), or run from source with `pythonw.exe watchdog.py`.
+
+## Building the installer
+
+The installer (`installer/DeskGuard.iss`) is built with
+[Inno Setup](https://jrsoftware.org/isinfo.php) and bundles the two packaged
+`.exe`s plus the Python source/model files needed for enrollment and
+maintenance:
+
+```
+"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\DeskGuard.iss
+```
+
+Output: `installer\output\DeskGuardSetup.exe`. Build the two app `.exe`s
+first (see below) - the installer just packages whatever's currently sitting
+in the repo root.
+
+The generated uninstaller stops both processes (via `taskkill`, in
+watchdog-then-tray order so it doesn't trigger a lock) before removing
+files, and leaves personal data (faces, model, settings, PIN, logs) in place
+by design - use `uninstall.py` or delete the install folder manually for a
+full wipe.
 
 ## Packaged .exe vs. running from source
 
@@ -191,7 +226,8 @@ degrades to "logged and retried," never to "locked out."
 
 ## Autostart
 
-A shortcut in the Startup folder
+If you used the installer with "start at login" checked, this is already
+set up. Otherwise, a shortcut in the Startup folder
 (`%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\Desk Guard.lnk`)
 launches `DeskGuardWatchdog.exe` at login — no console window, and the
 watchdog brings up `DeskGuard.exe` itself.
@@ -221,6 +257,8 @@ watchdog brings up `DeskGuard.exe` itself.
 | `icon.ico`                         | App icon, embedded into both `.exe`s                  |
 | `version_tray.txt` / `version_watchdog.txt` | Version-resource info (sets each exe's displayed name/product) |
 | `DeskGuard.spec` / `DeskGuardWatchdog.spec` | PyInstaller build specs - rerun to rebuild after a code change |
+| `installer/DeskGuard.iss`          | Inno Setup script that builds `DeskGuardSetup.exe`     |
+| `installer/next_steps.txt`         | Shown at the end of the installer (enrollment instructions) |
 
 ## Tray menu reference
 

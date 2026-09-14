@@ -19,3 +19,6 @@ __pycache__/
 build/
 dist/
 *.exe
+
+# Inno Setup installer build output - rebuild from installer/DeskGuard.iss
+installer/output/

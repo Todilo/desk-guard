@@ -681,7 +681,26 @@ def main():
     global _root, _icon
 
     if not os.path.exists(dg.MODEL_PATH):
-        sys.exit("No trained model found. Run 'python desk_guard.py enroll' first.")
+        # sys.exit()'s message goes nowhere under a windowed/no-console exe -
+        # the app would just silently vanish on a fresh install with no
+        # explanation. Show it instead.
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+        _force_foreground(root)
+        messagebox.showerror(
+            "Desk Guard",
+            "No trained face model found.\n\n"
+            "Run 'python desk_guard.py enroll' from the app folder first to "
+            "capture your face, then start Desk Guard again.",
+            parent=root,
+        )
+        root.destroy()
+        # Not a crash - a first-run condition. Mark it authorized so the
+        # watchdog cleanly stops too instead of treating this exit as a kill
+        # and locking + relaunching into the same dialog forever.
+        dg.mark_authorized_shutdown()
+        sys.exit(1)
 
     dg.write_pid(dg.TRAY_PID_PATH)
     dg.clear_shutdown_flag()

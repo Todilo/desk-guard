@@ -26,10 +26,10 @@ OutputDir=output
 OutputBaseFilename=DeskGuardSetup
 SetupIconFile=..\icon.ico
 UninstallDisplayIcon={app}\icon.ico
+InfoAfterFile=next_steps.txt
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-InfoAfterFile=next_steps.txt
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -57,7 +57,8 @@ Name: "{group}\Uninstall Desk Guard"; Filename: "{uninstallexe}"
 Name: "{userstartup}\Desk Guard"; Filename: "{app}\DeskGuardWatchdog.exe"; WorkingDir: "{app}"; IconFilename: "{app}\icon.ico"; Tasks: autostart
 
 [Run]
-Filename: "{app}\DeskGuardWatchdog.exe"; WorkingDir: "{app}"; Description: "Start Desk Guard now"; Flags: postinstall nowait skipifsilent unchecked
+Filename: "{app}\DeskGuard.exe"; Parameters: "--enroll"; WorkingDir: "{app}"; Description: "Enroll your face now (opens a webcam preview)"; Flags: postinstall skipifsilent
+Filename: "{app}\DeskGuardWatchdog.exe"; WorkingDir: "{app}"; Description: "Start Desk Guard now"; Flags: postinstall nowait skipifsilent
 
 [UninstallRun]
 ; Stop watchdog first (harmless - only tray disappearing triggers a lock),

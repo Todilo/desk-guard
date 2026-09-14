@@ -1,13 +1,6 @@
-Desk Guard is installed, but one manual step remains before it can run:
-face enrollment needs Python (the packaged app itself doesn't include it).
+Desk Guard is installed. On the next screen you can enroll your face and
+start the app right away - no extra setup needed.
 
-  1. Install Python 3.12+ with tkinter from python.org
-     (make sure to check "Add python.exe to PATH" during install)
-  2. Open a terminal in the install folder and run:
-       pip install -r requirements.txt
-       python desk_guard.py enroll
-  3. Then launch Desk Guard from the Start Menu, or just log in again if
-     you kept the "Start automatically" option checked.
-
-Full documentation, including how the timers/PIN/watchdog work:
-  README.md, in the install folder.
+Optional: the maintenance scripts (stop_all.py, uninstall.py) and building
+from source still use Python, if you ever want them - see README.md in the
+install folder for details. Most people won't need this.

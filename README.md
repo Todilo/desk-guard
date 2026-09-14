@@ -22,39 +22,49 @@ platforms and not expected to work there without real changes.
 
 ## Setup (on a new machine)
 
-**Option A - installer:** download `DeskGuardSetup.exe` from the
+**Option A - installer (recommended, no Python needed):** download
+`DeskGuardSetup.exe` from the
 [latest release](https://github.com/Todilo/desk-guard/releases/latest) and
 run it. No admin rights needed - it installs per-user to
-`%LocalAppData%\DeskGuard`, with an optional "start at login" checkbox and a
-proper Start Menu / uninstall entry.
+`%LocalAppData%\DeskGuard`, and its finish screen offers to enroll your face
+and start the app right away, both via the packaged exe - nothing else to
+install.
 
-**Option B - just the files:** download or clone this repo, and either use
-the release's `DeskGuard.exe` / `DeskGuardWatchdog.exe` directly or build
-them yourself (see "Packaged .exe vs. running from source" below).
+**Option B - just the files:** download the release's `DeskGuard.exe` /
+`DeskGuardWatchdog.exe` (or build them yourself - see "Packaged .exe vs.
+running from source" below), place them together with
+`face_detection_yunet_2023mar.onnx` in a folder, then run:
 
-Either way, one manual step remains: enrolling your face needs Python (the
-packaged app doesn't bundle it), since that isn't part of the packaged
-executables.
+```
+DeskGuard.exe --enroll
+```
 
-Requires Python 3.12+ with tkinter (the standard python.org Windows installer
-includes it; the Microsoft Store build does not) - even when running the
-packaged `.exe`s day to day, Python stays needed for enrollment and the
-maintenance scripts (see "Packaged .exe vs. running from source" below).
+to capture your face, and `DeskGuardWatchdog.exe` (or follow the Autostart
+section) to start protection. Still no Python required.
+
+**Option C - running from source:** for development, or if you'd rather not
+use the packaged exes at all. Requires Python 3.12+ with tkinter (the
+standard python.org Windows installer includes it; the Microsoft Store build
+does not):
 
 ```
 pip install -r requirements.txt
 python desk_guard.py enroll
 ```
 
-Then either double-click `DeskGuardWatchdog.exe` (or follow the Autostart
-section below), or run from source with `pythonw.exe watchdog.py`.
+Then run from source with `pythonw.exe watchdog.py`.
+
+Python only matters at all for: building the exes yourself, running from
+source, or the rarely-needed maintenance scripts (`stop_all.py`,
+`uninstall.py` when not using the installer's own uninstaller).
 
 ## Building the installer
 
 The installer (`installer/DeskGuard.iss`) is built with
 [Inno Setup](https://jrsoftware.org/isinfo.php) and bundles the two packaged
-`.exe`s plus the Python source/model files needed for enrollment and
-maintenance:
+`.exe`s (its finish screen offers to run enrollment and start the app right
+away, no Python involved), plus the Python source files for the optional
+maintenance path covered above:
 
 ```
 "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\DeskGuard.iss
@@ -84,12 +94,18 @@ their own folder, so they must stay next to `face_detection_yunet_2023mar.onnx`
 and the rest of the app files. They detect and correctly cross-launch each
 other by exe name.
 
+Enrollment is also part of the packaged exe - `DeskGuard.exe --enroll` runs
+the same capture/train flow as `python desk_guard.py enroll`, with no Python
+needed (the tray's **Re-train face model...** menu item uses this when
+frozen). `DeskGuard.exe --stop-all` likewise runs the same logic as
+`stop_all.py`.
+
 **Not packaged** - these still run via the Python install (`python.exe` /
 `pythonw.exe`) and are unaffected either way:
-- `python desk_guard.py enroll` - and the tray's **Re-train face model...**
-  menu item, which shells out to this the same way
-- `python stop_all.py` / `python uninstall.py` - maintenance scripts, rarely
-  run interactively
+- `python desk_guard.py enroll` / `python desk_guard.py run` - the plain CLI,
+  useful for testing without a tray icon
+- `python uninstall.py` - only relevant if you're not using the installer's
+  own generated uninstaller
 
 **Rebuilding after a code change:**
 ```

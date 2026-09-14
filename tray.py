@@ -582,6 +582,19 @@ def snooze_action_for(minutes: int):
     return handler
 
 
+def enroll_command():
+    """Command to run the enroll flow. When frozen, that's this same exe
+    relaunched with --enroll (no Python needed at all); running from source,
+    it's python.exe (not pythonw.exe, for console feedback) running this
+    script with --enroll."""
+    if getattr(sys, "frozen", False):
+        return [sys.executable, "--enroll"]
+    python_exe = dg.find_python_exe("python.exe")
+    if python_exe is None:
+        return None
+    return [python_exe, os.path.abspath(__file__), "--enroll"]
+
+
 def retrain(icon, item):
     if not require_pin("re-train the face model"):
         return
@@ -592,12 +605,11 @@ def retrain(icon, item):
     icon.icon = ICON_OFF
     stop_monitor_thread()
 
-    python_exe = dg.find_python_exe()
-    if python_exe is None:
+    cmd = enroll_command()
+    if cmd is None:
         show_message(
             "Couldn't find a Python install to run enrollment with. "
-            "Re-training isn't packaged into the app - install Python and "
-            "make sure python.exe is on PATH, or run "
+            "Install Python and make sure python.exe is on PATH, or run "
             "'python desk_guard.py enroll' manually.",
             error=True,
         )
@@ -609,7 +621,7 @@ def retrain(icon, item):
 
     show_message("Starting enrollment. A camera preview window will open — "
                   "look at the camera and move your head slightly until it finishes.")
-    subprocess.run([python_exe, os.path.join(dg.BASE_DIR, "desk_guard.py"), "enroll"])
+    subprocess.run(cmd, cwd=dg.BASE_DIR)
     dg.log("retrain finished, resuming monitoring")
 
     start_monitor_thread()
@@ -744,4 +756,16 @@ def check_pending_notification():
 
 
 if __name__ == "__main__":
-    main()
+    if "--enroll" in sys.argv:
+        count = 30
+        if "--count" in sys.argv:
+            try:
+                count = int(sys.argv[sys.argv.index("--count") + 1])
+            except (IndexError, ValueError):
+                pass
+        dg.enroll(count)
+    elif "--stop-all" in sys.argv:
+        import stop_all
+        stop_all.main()
+    else:
+        main()

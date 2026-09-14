@@ -1,0 +1,21 @@
+# Personal / generated data - never commit someone's enrolled face data,
+# trained model, PIN hash, or runtime state.
+faces/
+owner_model.yml
+pin.dat
+settings.json
+desk_guard.log
+desk_guard.log.1
+*.pid
+shutdown.flag
+pending_notification.json
+
+# Python
+__pycache__/
+*.pyc
+
+# PyInstaller build output - rebuild from the .spec files instead of committing
+# 75-85MB binaries; see README "Packaged .exe vs. running from source".
+build/
+dist/
+*.exe

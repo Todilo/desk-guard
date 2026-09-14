@@ -1,0 +1,5 @@
+opencv-contrib-python==5.0.0.93
+numpy==2.5.3
+pystray==0.19.5
+pillow==12.3.0
+six==1.17.0

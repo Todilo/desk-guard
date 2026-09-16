@@ -80,30 +80,40 @@ def on_camera_status(ok: bool):
 
 
 def update_icon_tick():
+    # Self-rescheduling: if anything in the body throws (a transient Windows
+    # API failure, a stale icon handle after long uptime, etc.) without this
+    # try/finally, the function aborts before reaching its own reschedule
+    # call below and this timer permanently stops - freezing the tray icon
+    # in whatever state it last rendered, forever. Same class of bug already
+    # fixed once for _process_dialog_queue.
     global _camera_warned
-    if _icon is not None:
-        if not enabled.is_set():
-            _icon.icon = ICON_OFF
-            if _snooze_resume_at is not None:
-                remaining_min = max(0, int((_snooze_resume_at - time.time()) // 60) + 1)
-                _icon.title = f"Desk Guard - snoozed, resumes in ~{remaining_min} min"
+    try:
+        if _icon is not None:
+            if not enabled.is_set():
+                _icon.icon = ICON_OFF
+                if _snooze_resume_at is not None:
+                    remaining_min = max(0, int((_snooze_resume_at - time.time()) // 60) + 1)
+                    _icon.title = f"Desk Guard - snoozed, resumes in ~{remaining_min} min"
+                else:
+                    _icon.title = "Desk Guard - monitoring disabled"
+            elif not _camera_ok and _camera_bad_since and (time.time() - _camera_bad_since) > CAMERA_WARN_AFTER:
+                _icon.icon = ICON_WARN
+                _icon.title = "Desk Guard - camera unavailable"
+                if not _camera_warned:
+                    _camera_warned = True
+                    _icon.notify(
+                        "Camera has been unavailable for a while - protection may not be active.",
+                        "Desk Guard",
+                    )
             else:
-                _icon.title = "Desk Guard - monitoring disabled"
-        elif not _camera_ok and _camera_bad_since and (time.time() - _camera_bad_since) > CAMERA_WARN_AFTER:
-            _icon.icon = ICON_WARN
-            _icon.title = "Desk Guard - camera unavailable"
-            if not _camera_warned:
-                _camera_warned = True
-                _icon.notify(
-                    "Camera has been unavailable for a while - protection may not be active.",
-                    "Desk Guard",
-                )
-        else:
-            _icon.icon = ICON_ON
-            _icon.title = "Desk Guard"
-            _camera_warned = False
-    if _root is not None:
-        _root.after(2000, update_icon_tick)
+                _icon.icon = ICON_ON
+                _icon.title = "Desk Guard"
+                _camera_warned = False
+    except Exception:
+        dg.log(f"update_icon_tick error:\n{traceback.format_exc()}")
+    finally:
+        if _root is not None:
+            _root.after(2000, update_icon_tick)
 
 
 _user32 = ctypes.windll.user32

@@ -66,7 +66,9 @@ back door: changing settings requires the PIN once one is set, since loosening
 the timers is itself a way to defeat protection. Changes take effect
 immediately.
 
-## PIN protection
+## How it protects you
+
+### PIN protection
 
 A stranger who sits down at the desk could otherwise just right-click the
 tray icon and turn monitoring off before the grace timer ever fires. Once you
@@ -88,7 +90,7 @@ that doubles the wait (60s, 120s, 240s, capped at 300s). This resets to zero
 after a correct entry. Without this, someone at the desk could just keep
 guessing as fast as they could type.
 
-## Kill-resistance (watchdog)
+### Kill-resistance (watchdog)
 
 Turning off monitoring "properly" still leaves an obvious hole: someone could
 just kill the tray process in Task Manager instead of using the menu. To
@@ -118,7 +120,7 @@ Anyone with admin rights can still stop both processes (e.g. via an elevated
 stop casual snooping, not a determined attacker with admin access to the
 machine.
 
-### Crash-loop protection (won't lock you out)
+#### Crash-loop protection (won't lock you out)
 
 If the tray app crashed on every single startup (a corrupted model file, a
 bad settings value, a future bug — not someone killing it), a naive watchdog
@@ -141,7 +143,9 @@ Already set up if you kept "start at login" checked during install. To
 change it later, re-run the installer, or manage the shortcut directly in
 `shell:startup`.
 
-## Tray menu reference
+## Using Desk Guard
+
+### Tray menu reference
 
 - **Monitoring enabled** — checkbox; toggling off requires the PIN
 - **Snooze monitoring** — submenu (5/15/10/30 min, PIN-gated); disables
@@ -157,7 +161,7 @@ change it later, re-run the installer, or manage the shortcut directly in
   summary of the above, from the tray
 - **Quit** — PIN-gated; stops the app and its watchdog cleanly
 
-## Tray icon states
+### Tray icon states
 
 The icon and its hover tooltip reflect live status, not just on/off:
 
@@ -167,7 +171,7 @@ The icon and its hover tooltip reflect live status, not just on/off:
 | 🟡 amber  | Monitoring enabled, but the camera has been unreachable for over 20s (unplugged, driver issue, in use by another app) |
 | ⚪ gray   | Monitoring disabled (manually, or snoozed — tooltip shows which and, if snoozed, when it resumes) |
 
-## Notifications
+### Notifications
 
 Windows toast notifications (via the tray icon) fire for events you didn't
 directly trigger yourself, so you don't have to dig through logs to notice

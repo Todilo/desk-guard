@@ -6,7 +6,9 @@
 ; Output: installer\output\DeskGuardSetup.exe
 
 #define MyAppName "Desk Guard"
-#define MyAppVersion "1.0.0"
+#ifndef MyAppVersion
+  #define MyAppVersion "1.0.0"
+#endif
 #define MyAppPublisher "Christian Klinton"
 #define MyAppURL "https://github.com/Todilo/desk-guard"
 

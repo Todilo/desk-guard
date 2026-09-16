@@ -20,6 +20,10 @@ platforms and not expected to work there without real changes.
 - Windows notifications for locks, camera issues, and watchdog events
 - Snooze, live settings, re-training, all from the tray icon
 
+<p align="center">
+  <img src="docs/about-window.png" alt="Desk Guard's About window, showing live settings" width="480">
+</p>
+
 ## Install
 
 1. Download `DeskGuardSetup.exe` from the
@@ -29,6 +33,12 @@ platforms and not expected to work there without real changes.
    start Desk Guard
 
 That's it - nothing else to install.
+
+> **Windows may show a SmartScreen warning** ("Windows protected your PC")
+> since this installer isn't code-signed — that costs money and isn't worth
+> it for a free personal tool. Click **More info → Run anyway** if you trust
+> the source (or just read the code and build it yourself - see
+> [Development](#development)).
 
 ## How it works
 

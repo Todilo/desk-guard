@@ -39,6 +39,9 @@ enabled.set()
 stop_flag = threading.Event()  # controls only the monitor thread (retrain/settings restart it)
 shutting_down = threading.Event()  # set only on a real, PIN-verified app quit
 _monitor_thread = None
+_retraining = threading.Event()  # re-entrancy guard + lets the menu item gray itself out
+
+RETRAIN_TIMEOUT = 240  # seconds - enroll() has its own internal cap, this is the outer backstop
 
 _root = None
 _icon = None
@@ -497,10 +500,16 @@ def start_monitor_thread():
     _monitor_thread.start()
 
 
-def stop_monitor_thread():
+def stop_monitor_thread() -> bool:
+    """Returns False if the monitor thread didn't stop in time - callers that
+    are about to open a second camera handle (retrain) must not proceed in
+    that case, since DirectShow capture can hang indefinitely on read() when
+    two processes contend for the same device."""
     stop_flag.set()
     if _monitor_thread is not None:
         _monitor_thread.join(timeout=5)
+        return not _monitor_thread.is_alive()
+    return True
 
 
 def monitor_supervisor_loop():
@@ -606,14 +615,12 @@ def enroll_command():
 
 
 def retrain(icon, item):
+    # Re-entrancy guard: the menu item grays itself out via _retraining, but
+    # pystray still delivers a click queued just before that took effect.
+    if _retraining.is_set():
+        return
     if not require_pin("re-train the face model"):
         return
-
-    dg.log("retrain requested from tray")
-    was_enabled = enabled.is_set()
-    enabled.clear()
-    icon.icon = ICON_OFF
-    stop_monitor_thread()
 
     cmd = enroll_command()
     if cmd is None:
@@ -623,21 +630,81 @@ def retrain(icon, item):
             "'python desk_guard.py enroll' manually.",
             error=True,
         )
+        return
+
+    _retraining.set()
+    dg.log("retrain requested from tray")
+    was_enabled = enabled.is_set()
+    enabled.clear()
+    icon.icon = ICON_OFF
+
+    dg.log("retrain: stopping monitor thread")
+    stopped = stop_monitor_thread()
+    dg.log(f"retrain: monitor thread stopped={stopped}")
+    if not stopped:
+        # The old thread is still holding the camera - opening a second
+        # handle on top of it is how DirectShow capture hangs indefinitely,
+        # which is exactly the freeze this is meant to prevent.
+        dg.log("retrain: old monitor thread didn't stop in time, aborting retrain")
+        show_message(
+            "Monitoring is stuck releasing the camera, so re-training can't start "
+            "safely right now. Restart Desk Guard and try again.",
+            error=True,
+        )
+        _retraining.clear()
         start_monitor_thread()
         if was_enabled:
             enabled.set()
             icon.icon = ICON_ON
         return
 
-    show_message("Starting enrollment. A camera preview window will open — "
-                  "look at the camera and move your head slightly until it finishes.")
-    subprocess.run(cmd, cwd=dg.BASE_DIR)
-    dg.log("retrain finished, resuming monitoring")
+    # A toast instead of a modal dialog here: this used to call show_message(),
+    # which steals the foreground via AttachThreadInput/SetForegroundWindow
+    # (see _force_foreground) before it can display. That's a reasonable thing
+    # to do for a PIN prompt the user must answer, but doing it again for a
+    # pure FYI message - fired right after the PIN dialog's own foreground
+    # grab, often moments after an unlock when Windows' own foreground state
+    # is still settling - adds a second focus-stealing race for no benefit.
+    # notify() is a plain Shell_NotifyIcon balloon: no focus games, can't block.
+    dg.log("retrain: posting start notification")
+    try:
+        icon.notify("Starting enrollment. A camera preview window will open — "
+                     "look at the camera and move your head slightly until it finishes.",
+                     "Desk Guard")
+    except Exception:
+        dg.log(f"retrain: notify failed:\n{traceback.format_exc()}")
+    dg.log("retrain: start notification posted")
 
-    start_monitor_thread()
-    if was_enabled:
-        enabled.set()
-        icon.icon = ICON_ON
+    def run_enrollment():
+        # Runs off the pystray callback thread so a stuck enrollment can
+        # never again freeze the tray icon itself - only this worker thread
+        # blocks, and it's bounded by RETRAIN_TIMEOUT either way.
+        try:
+            dg.log(f"retrain: launching enrollment subprocess: {cmd}")
+            proc = subprocess.Popen(cmd, cwd=dg.BASE_DIR)
+            dg.log(f"retrain: enrollment subprocess pid={proc.pid}, waiting")
+            try:
+                proc.wait(timeout=RETRAIN_TIMEOUT)
+                dg.log("retrain finished, resuming monitoring")
+            except subprocess.TimeoutExpired:
+                dg.log(f"retrain: enrollment didn't finish within {RETRAIN_TIMEOUT}s, killing it")
+                subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                                capture_output=True)
+                show_message(
+                    "Enrollment timed out and was stopped. Make sure your face is "
+                    "clearly visible to the camera and try again.",
+                    error=True,
+                )
+        except Exception:
+            dg.log(f"retrain error:\n{traceback.format_exc()}")
+        finally:
+            start_monitor_thread()
+            if was_enabled:
+                enabled.set()
+                icon.icon = ICON_ON
+            _retraining.clear()
+
+    threading.Thread(target=run_enrollment, daemon=True).start()
 
 
 def settings_action(icon, item):
@@ -649,7 +716,14 @@ def settings_action(icon, item):
         return
     dg.save_settings(new_settings)
     dg.log(f"settings updated from tray: {new_settings}")
-    stop_monitor_thread()
+    if not stop_monitor_thread():
+        dg.log("settings: old monitor thread didn't stop in time, not starting a second one")
+        show_message(
+            "Settings saved, but monitoring is stuck shutting down a camera session. "
+            "Restart Desk Guard to apply the new settings.",
+            error=True,
+        )
+        return
     start_monitor_thread()
     show_message("Settings updated.")
 
@@ -746,7 +820,8 @@ def main():
         pystray.MenuItem("Monitoring enabled", toggle_enabled, checked=lambda item: enabled.is_set()),
         pystray.MenuItem("Snooze monitoring", snooze_menu),
         pystray.MenuItem("Settings...", settings_action),
-        pystray.MenuItem("Re-train face model...", retrain),
+        pystray.MenuItem("Re-train face model...", retrain,
+                          enabled=lambda item: not _retraining.is_set()),
         pystray.MenuItem("Set/change PIN...", set_pin_action),
         pystray.MenuItem("About / How it works...", lambda icon, item: show_about()),
         pystray.MenuItem("Quit", quit_app),

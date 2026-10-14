@@ -242,11 +242,25 @@ def enroll(count: int):
     captured = 0
     existing = len(os.listdir(FACES_DIR)) if os.path.isdir(FACES_DIR) else 0
     last_capture = 0.0
+    consecutive_read_failures = 0
+    start_time = time.time()
+    MAX_READ_FAILURES = 100  # a camera that can't deliver a frame at all, not just no face
+    MAX_ENROLL_SECONDS = 180  # backstop so a stalled camera/face can't hang this forever
 
     while captured < count:
+        if time.time() - start_time > MAX_ENROLL_SECONDS:
+            print(f"Enrollment timed out after {MAX_ENROLL_SECONDS}s.")
+            break
+
         ok, frame = cam.read()
         if not ok:
+            consecutive_read_failures += 1
+            if consecutive_read_failures > MAX_READ_FAILURES:
+                cam.release()
+                cv2.destroyAllWindows()
+                sys.exit("Camera stopped responding during enrollment.")
             continue
+        consecutive_read_failures = 0
 
         faces = detect_faces(detector, frame)
 
